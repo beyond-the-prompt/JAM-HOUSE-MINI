@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jam_House - Music Gaming Experience</title>
+<script src="https://cdn.tailwindcss.com/3.4.16"></script>
+<link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css">
+<style>
+body { font-family: 'Montserrat', sans-serif; background-color: #0a0a1a; color: #fff; overflow-x: hidden; }
+.neon-text { text-shadow: 0 0 10px #ff3e00, 0 0 20px #ff3e00, 0 0 30px #ff3e00; }
+.menu-item { position: relative; transition: all 0.3s ease; cursor:pointer;}
+.menu-item:hover { transform: translateX(10px); color: #ff3e00; }
+.menu-item:hover::before { content: ''; position: absolute; left: -20px; top: 50%; width: 15px; height: 2px; background-color: #ff3e00; transform: translateY(-50%); }
+.visualizer { position: absolute; bottom: 0; left: 0; width: 100%; height: 80px; display: flex; align-items: flex-end; justify-content: center; gap: 5px; z-index: 10;}
+.visualizer-bar { width: 5px; background-color: rgba(255,62,0,0.7); border-radius: 5px 5px 0 0; animation: visualize 1.5s infinite;}
+@keyframes visualize { 0%,100%{height:20px;}50%{height:60px;} }
+.visualizer-bar:nth-child(1) { animation-delay: 0.1s; }
+.visualizer-bar:nth-child(2) { animation-delay: 0.2s; }
+.visualizer-bar:nth-child(3) { animation-delay: 0.3s; }
+.visualizer-bar:nth-child(4) { animation-delay: 0.4s; }
+.visualizer-bar:nth-child(5) { animation-delay: 0.5s; }
+.visualizer-bar:nth-child(6) { animation-delay: 0.6s; }
+.visualizer-bar:nth-child(7) { animation-delay: 0.7s; }
+.visualizer-bar:nth-child(8) { animation-delay: 0.8s; }
+.visualizer-bar:nth-child(9) { animation-delay: 0.9s; }
+.visualizer-bar:nth-child(10) { animation-delay: 1.0s; }
+.visualizer-bar:nth-child(11) { animation-delay: 1.1s; }
+.visualizer-bar:nth-child(12) { animation-delay: 1.2s; }
+.visualizer-bar:nth-child(13) { animation-delay: 1.3s; }
+.visualizer-bar:nth-child(14) { animation-delay: 1.4s; }
+.visualizer-bar:nth-child(15) { animation-delay: 1.5s; }
+.particle { position: absolute; width: 3px; height: 3px; background-color: rgba(255,255,255,0.5); border-radius: 50%; animation: float 15s infinite linear; }
+@keyframes float { 0% { transform: translateY(0) translateX(0); opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { transform: translateY(-500px) translateX(100px); opacity: 0; } }
+.volume-slider { -webkit-appearance: none; width: 100%; height: 6px; background: #2d2d3a; border-radius: 5px; outline: none; }
+.volume-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 18px; height: 18px; background: #ff3e00; border-radius: 50%; cursor: pointer; }
+.caustic-pad {
+  width: 80px; height: 80px; background: linear-gradient(145deg, #333, #1a1a1a);
+  border: 3px solid #ff3e00; border-radius: 12px; box-shadow: 0 0 10px rgba(255,62,0,0.5);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  font-size: 0.8rem; font-weight: 600; text-transform: uppercase;
+  cursor: pointer; transition: transform 0.2s, background 0.2s, box-shadow 0.2s, border-color 0.2s;
+  position: relative; margin: 4px; outline: none;
+}
+.caustic-pad span.key { font-size: 0.7rem; color: #8b5cf6; margin-top: 4px;}
+.dropdown-panel { max-height: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(.4,2,.6,1); }
+.dropdown-panel.open { max-height: 1200px; }
+.sequencer-grid { display: grid; grid-template-columns: repeat(16, 1fr); gap: 2px; background: #222; padding: 8px; border-radius: 8px; width: 100%; max-width: 600px; margin: 0 auto; }
+.sequencer-cell { width: 20px; height: 20px; background: #333; border-radius: 4px; cursor: pointer; transition: background 0.2s, transform 0.2s; }
+.sequencer-cell.active { background: #ff3e00; }
+.screen-modal { display:none; position: fixed; z-index: 100; left:0; top:0; width:100vw; height:100vh; background:rgba(0,0,0,0.85); align-items:center; justify-content:center; }
+.screen-modal.open { display:flex; }
+.screen-content { background:#181828; border-radius:16px; max-width:600px; width:90vw; padding:2.5rem; box-shadow:0 0 30px #000; }
+.screen-content h2 { font-size:2rem; margin-bottom:1rem; }
+.screen-content .tutorial { margin-top:1.5rem; background:#232344; border-radius:8px; padding:1rem; color:#ffb380; }
+.screen-content button { margin-top:2rem; }
+@media (max-width: 900px) {
+  .flex { flex-direction: column !important; }
+  .w-72, .w-96, .ml-24 { width: 100% !important; margin-left: 0 !important; }
+}
+</style>
+</head>
+<body>
+<div class="relative min-h-screen flex flex-col">
+  <!-- Background image with overlay -->
+  <div class="absolute inset-0 z-0">
+    <div style="background-image: url('https://readdy.ai/api/search-image?query=Dark%20moody%20concert%20venue%20with%20neon%20Jam%20House%20sign%20glowing%20on%20stage.%20Atmospheric%20stage%20lights%2C%20smoke%20effects%2C%20and%20blurred%20audience%20silhouettes.%20Modern%20nightclub%20interior%20with%20guitar%20silhouettes%20and%20music%20equipment.%20Dramatic%20lighting%20with%20red%20and%20orange%20accent%20colors%20reflecting%20on%20surfaces.&width=1920&height=1080&seq=1&orientation=landscape');" class="absolute inset-0 bg-cover bg-center opacity-40"></div>
+    <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black opacity-90"></div>
+  </div>
+  <div id="particles" class="absolute inset-0 z-0 overflow-hidden"></div>
+  <!-- Header -->
+  <header class="relative z-10 pt-6 px-8 flex justify-between items-center">
+    <div class="flex items-center">
+      <div class="w-12 h-12 flex items-center justify-center text-primary">
+        <i class="ri-guitar-fill ri-2x"></i>
+      </div>
+      <div class="ml-4 text-sm text-gray-400">
+        <div>ONLINE PLAYERS: 1,247</div>
+        <div>SERVER STATUS: ONLINE</div>
+      </div>
+    </div>
+    <div class="flex items-center gap-6">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 flex items-center justify-center bg-gray-800 rounded-full">
+          <i class="ri-notification-3-line"></i>
+        </div>
+        <div class="w-8 h-8 flex items-center justify-center bg-gray-800 rounded-full">
+          <i class="ri-settings-3-line"></i>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
+          <span class="font-bold">TG</span>
+        </div>
+        <div>
+          <div class="text-sm font-semibold">TipsyGiant_420</div>
+          <div class="text-xs text-gray-400">Level 34</div>
+        </div>
+      </div>
+    </div>
+  </header>
+  <!-- Main Content -->
+  <main class="relative z-10 flex-1 flex flex-col items-center justify-center px-6 py-12">
+    <!-- Logo -->
+    <div class="mb-12 relative">
+      <h1 class="font-['Pacifico'] text-7xl text-white neon-text">Jam_House</h1>
+      <div class="absolute -top-6 -right-10 text-primary">
+        <i class="ri-guitar-fill ri-2x"></i>
+      </div>
+    </div>
+    <!-- Menu -->
+    <div class="flex">
+      <!-- Left side - Menu items -->
+      <div class="w-72">
+        <ul class="space-y-6">
+          <li class="menu-item text-2xl font-bold text-primary" data-screen="playnowScreen">PLAY NOW</li>
+          <li class="menu-item text-2xl font-bold" data-screen="careerScreen">CAREER MODE</li>
+          <li class="menu-item text-2xl font-bold" data-screen="multiplayerScreen">MULTIPLAYER JAM</li>
+          <li class="menu-item text-2xl font-bold" data-screen="customTracksDropdown">CUSTOM TRACKS</li>
+          <li class="menu-item text-2xl font-bold" data-screen="settingsScreen">SETTINGS</li>
+          <li class="menu-item text-2xl font-bold" data-screen="creditsScreen">CREDITS</li>
+        </ul>
+        <div class="mt-16">
+          <div class="text-sm text-gray-400 mb-2">MASTER VOLUME</div>
+          <input type="range" class="volume-slider" min="0" max="100" value="80">
+        </div>
+      </div>
+      <!-- Right side - Featured content -->
+      <div class="w-96 ml-24">
+        <div class="bg-black bg-opacity-50 p-6 rounded-lg border border-gray-800">
+          <div class="text-primary font-bold mb-4">FEATURED ARTIST</div>
+          <div class="relative w-full h-80 mb-4 overflow-hidden rounded-lg">
+            <img src="https://static.readdy.ai/image/795fbba2694788233fe191ce55c1332e/69ce0f0d97a26c25e1da476d508327b2.png" alt="Featured Artist" class="w-full h-full object-cover object-top">
+            <div class="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black opacity-90"></div>
+            <div class="absolute bottom-0 left-0 right-0 p-4">
+              <div class="text-xl font-bold">Billy Barbeau</div>
+              <div class="text-gray-300 text-sm">Special Guest Performance</div>
+            </div>
+          </div>
+          <p class="text-gray-300 text-sm mb-4">Join us for an epic night of metal and mayhem. Experience the raw power of guitar mastery in our newest venue.</p>
+          <div class="flex justify-between items-center mb-4">
+            <div class="text-sm">
+              <div class="text-gray-400">LIVE EVENT</div>
+              <div class="font-bold">TONIGHT 8PM</div>
+            </div>
+            <div class="text-sm">
+              <div class="text-gray-400">VENUE</div>
+              <div class="font-bold">NEON DISTRICT</div>
+            </div>
+          </div>
+          <a href="https://www.reverbnation.com/BillyBarbeau" target="_blank" rel="noopener noreferrer">
+            <button class="mt-4 px-6 py-2 bg-primary text-white rounded-button hover:bg-orange-600 transition">
+              Buy Tickets
+            </button>
+          </a>
+          <!-- NOW PLAYING BLOCK WITH 3-SONG PLAYER -->
+          <div class="mt-6 bg-black bg-opacity-50 p-4 rounded-lg border border-gray-800">
+            <div class="text-sm text-gray-400 mb-2">NOW PLAYING</div>
+            <div class="flex items-center gap-3">
+              <div class="w-12 h-12 bg-gray-800 rounded flex items-center justify-center">
+                <i class="ri-disc-line text-primary"></i>
+              </div>
+              <div>
+                <div class="font-bold" id="nowPlayingTitle">BUGG</div>
+                <div class="text-sm text-gray-400" id="nowPlayingArtist">Your Song</div>
+              </div>
+              <div class="ml-auto flex gap-2">
+                <button id="prevSongBtn" class="w-8 h-8 flex items-center justify-center bg-gray-800 rounded-full">
+                  <i class="ri-skip-back-line"></i>
+                </button>
+                <button id="playPauseBtn" class="w-8 h-8 flex items-center justify-center bg-primary rounded-full">
+                  <i class="ri-play-line" id="playPauseIcon"></i>
+                </button>
+                <button id="nextSongBtn" class="w-8 h-8 flex items-center justify-center bg-gray-800 rounded-full">
+                  <i class="ri-skip-forward-line"></i>
+                </button>
+              </div>
+            </div>
+            <audio id="audioPlayer" style="width:100%;margin-top:8px"></audio>
+            <div class="flex gap-2 mt-4">
+              <button class="px-3 py-1 rounded bg-gray-800 text-white text-xs" onclick="selectSong(0)">BUGG</button>
+              <button class="px-3 py-1 rounded bg-gray-800 text-white text-xs" onclick="selectSong(1)">C-7</button>
+              <button class="px-3 py-1 rounded bg-gray-800 text-white text-xs" onclick="selectSong(2)">DBFSG</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Custom Tracks Dropdown Panel -->
+    <div id="customTracksDropdown" class="dropdown-panel bg-[#181828] border border-gray-700 rounded-lg shadow-xl mt-8 w-full max-w-3xl mx-auto p-6">
+      <h2 class="text-2xl neon-text mb-4 text-center">Custom Tracks</h2>
+      <!-- Drum Pads -->
+      <div class="flex flex-wrap gap-3 justify-center mb-4">
+        <div class="caustic-pad">Clap Crackle 1<br><span class="key">Q</span></div>
+        <div class="caustic-pad">Kick Hard<br><span class="key">W</span></div>
+        <div class="caustic-pad">Snare Tight<br><span class="key">E</span></div>
+        <div class="caustic-pad">Clap Flange<br><span class="key">R</span></div>
+        <div class="caustic-pad">Hats Sizzle<br><span class="key">T</span></div>
+        <div class="caustic-pad">Hats Vinyl 1<br><span class="key">Y</span></div>
+        <div class="caustic-pad">Kick It<br><span class="key">U</span></div>
+        <div class="caustic-pad">Perc Analog 1<br><span class="key">I</span></div>
+        <div class="caustic-pad">Clap Crackle 2<br><span class="key">A</span></div>
+        <div class="caustic-pad">Kick Glitcher<br><span class="key">S</span></div>
+        <div class="caustic-pad">Snare Lofi<br><span class="key">D</span></div>
+        <div class="caustic-pad">Clap Giannis<br><span class="key">F</span></div>
+        <div class="caustic-pad">Hats Springwater<br><span class="key">G</span></div>
+        <div class="caustic-pad">Kick Boiler<br><span class="key">H</span></div>
+        <div class="caustic-pad">Kick Showstopper<br><span class="key">J</span></div>
+        <div class="caustic-pad">Perc Analog 2<br><span class="key">K</span></div>
+      </div>
+      <!-- Sequencer -->
+      <div class="mb-4">
+        <h3 class="text-lg font-bold mb-2 text-center">Step Sequencer</h3>
+        <div id="sequencer" class="sequencer-grid"></div>
+        <div class="flex gap-2 justify-center mt-2">
+          <button id="playSeq" class="px-3 py-1 rounded bg-primary text-white text-xs">Play</button>
+          <button id="stopSeq" class="px-3 py-1 rounded bg-gray-800 text-white text-xs">Stop</button>
+          <button id="clearSeq" class="px-3 py-1 rounded bg-gray-800 text-white text-xs">Clear</button>
+          <button id="downloadSeqWav" class="px-3 py-1 rounded bg-gray-800 text-white text-xs">Sequencer WAV</button>
+        </div>
+      </div>
+      <!-- Looper -->
+      <div class="mb-4">
+        <h3 class="text-lg font-bold mb-2 text-center">Looper</h3>
+        <div class="flex gap-2 justify-center">
+          <button id="startLoop" class="px-3 py-1 rounded bg-primary text-white text-xs">Start Loop</button>
+          <button id="stopLoop" class="px-3 py-1 rounded bg-gray-800 text-white text-xs">Stop Loop</button>
+        </div>
+      </div>
+      <!-- Recorder -->
+      <div class="mb-4">
+        <h3 class="text-lg font-bold mb-2 text-center">Recorder</h3>
+        <div class="flex gap-2 justify-center">
+          <button id="startRec" class="px-3 py-1 rounded bg-primary text-white text-xs">Record</button>
+          <button id="stopRec" class="px-3 py-1 rounded bg-gray-800 text-white text-xs">Stop</button>
+          <a id="downloadRec" class="px-3 py-1 rounded bg-gray-800 text-white text-xs hidden" download="jamhouse-recording.wav">Download</a>
+        </div>
+      </div>
+      <!-- Audio Player for Custom Track -->
+      <div class="mb-2">
+        <h3 class="text-lg font-bold mb-2 text-center">Custom Track Audio Player</h3>
+        <audio id="customTrackPlayer" controls style="width:100%"></audio>
+      </div>
+      <div class="tutorial mt-6">
+        <b>Custom Tracks Tutorial:</b>
+        <ul class="list-disc ml-5 mt-2">
+          <li>Click pads to play drum samples.</li>
+          <li>Use the sequencer to program beats, then export as WAV.</li>
+          <li>Looper and recorder are demo features.</li>
+          <li>Audio player lets you preview your custom track.</li>
+        </ul>
+      </div>
+    </div>
+    <!-- Modal Screens for Each Menu Item -->
+    <div id="playnowScreen" class="screen-modal"><div class="screen-content">
+      <h2>Play Now</h2>
+      <div class="tutorial">
+        <b>Quick Play Tutorial:</b>
+        <ul class="list-disc ml-5 mt-2">
+          <li>Jump into an instant jam session.</li>
+          <li>Use your keyboard or mouse to trigger sounds.</li>
+          <li>Compete for high scores!</li>
+        </ul>
+      </div>
+      <button onclick="closeScreens()" class="mt-8 px-6 py-2 bg-primary text-white rounded-button hover:bg-orange-600 transition">Back to Main</button>
+    </div></div>
+    <div id="careerScreen" class="screen-modal"><div class="screen-content">
+      <h2>Career Mode</h2>
+      <div class="tutorial">
+        <b>Career Mode Tutorial:</b>
+        <ul class="list-disc ml-5 mt-2">
+          <li>Advance through gigs and venues.</li>
+          <li>Unlock new tracks and gear as you progress.</li>
+          <li>Earn fans and climb the charts!</li>
+        </ul>
+      </div>
+      <button onclick="closeScreens()" class="mt-8 px-6 py-2 bg-primary text-white rounded-button hover:bg-orange-600 transition">Back to Main</button>
+    </div></div>
+    <div id="multiplayerScreen" class="screen-modal"><div class="screen-content">
+      <h2>Multiplayer Jam</h2>
+      <div class="tutorial">
+        <b>Multiplayer Tutorial:</b>
+        <ul class="list-disc ml-5 mt-2">
+          <li>Join or host a jam room with friends.</li>
+          <li>Collaborate live using pads and sequencer.</li>
+          <li>Chat and share your creations.</li>
+        </ul>
+      </div>
+      <button onclick="closeScreens()" class="mt-8 px-6 py-2 bg-primary text-white rounded-button hover:bg-orange-600 transition">Back to Main</button>
+    </div></div>
+    <div id="settingsScreen" class="screen-modal"><div class="screen-content">
+      <h2>Settings</h2>
+      <div class="tutorial">
+        <b>Settings Tutorial:</b>
+        <ul class="list-disc ml-5 mt-2">
+          <li>Adjust master volume and sound quality.</li>
+          <li>Customize controls and appearance.</li>
+          <li>Set preferences for notifications and multiplayer.</li>
+        </ul>
+      </div>
+      <button onclick="closeScreens()" class="mt-8 px-6 py-2 bg-primary text-white rounded-button hover:bg-orange-600 transition">Back to Main</button>
+    </div></div>
+    <div id="creditsScreen" class="screen-modal"><div class="screen-content">
+      <h2>Credits</h2>
+      <div class="tutorial">
+        <b>Credits & Info:</b>
+        <ul class="list-disc ml-5 mt-2">
+          <li>Created by TipsyGiant_420 and the Jam_House team.</li>
+          <li>Special thanks to all contributors and testers!</li>
+        </ul>
+      </div>
+      <button onclick="closeScreens()" class="mt-8 px-6 py-2 bg-primary text-white rounded-button hover:bg-orange-600 transition">Back to Main</button>
+    </div></div>
+  </main>
+  <!-- Footer -->
+  <footer class="relative z-10 px-8 py-4 flex justify-between items-center text-xs text-gray-500">
+    <div>© 2025 Jam_House. All rights reserved.</div>
+    <div class="flex gap-6">
+      <span>Terms of Service</span>
+      <span>Privacy Policy</span>
+      <span>Support</span>
+      <div class="flex gap-3 ml-6">
+        <div class="w-6 h-6 flex items-center justify-center bg-gray-800 rounded-full">
+          <i class="ri-discord-line"></i>
+        </div>
+        <div class="w-6 h-6 flex items-center justify-center bg-gray-800 rounded-full">
+          <i class="ri-twitter-x-line"></i>
+        </div>
+        <div class="w-6 h-6 flex items-center justify-center bg-gray-800 rounded-full">
+          <i class="ri-youtube-line"></i>
+        </div>
+      </div>
+    </div>
+  </footer>
+  <div class="visualizer">
+    <div class="visualizer-bar"></div>
+    <div class="visualizer-bar"></div>
+    <div class="visualizer-bar"></div>
+    <div class="visualizer-bar"></div>
+    <div class="visualizer-bar"></div>
+    <div class="visualizer-bar"></div>
+    <div class="visualizer-bar"></div>
+    <div class="visualizer-bar"></div>
+    <div class="visualizer-bar"></div>
+    <div class="visualizer-bar"></div>
+    <div class="visualizer-bar"></div>
+    <div class="visualizer-bar"></div>
+    <div class="visualizer-bar"></div>
+    <div class="visualizer-bar"></div>
+    <div class="visualizer-bar"></div>
+  </div>
+</div>
+<script>
+// Particle background
+document.addEventListener('DOMContentLoaded', function() {
+  const particlesContainer = document.getElementById('particles');
+  for (let i = 0; i < 125; i++) {
+    const particle = document.createElement('div');
+    particle.classList.add('particle');
+    particle.style.left = `${Math.random() * 100}%`;
+    particle.style.top = `${Math.random() * 100}%`;
+    particle.style.animationDuration = `${75 + Math.random() * 15}s`;
+    particle.style.animationDelay = `${Math.random() * 5}s`;
+    particlesContainer.appendChild(particle);
+  }
+});
+
+// Menu screen logic
+function closeScreens() {
+  document.querySelectorAll('.screen-modal').forEach(s => s.classList.remove('open'));
+}
+document.querySelectorAll('.menu-item').forEach(item => {
+  const screen = item.getAttribute('data-screen');
+  if (screen) {
+    item.addEventListener('click', () => {
+      closeScreens();
+      if(screen === "customTracksDropdown") {
+        document.getElementById('customTracksDropdown').classList.toggle('open');
+      } else {
+        document.getElementById('customTracksDropdown').classList.remove('open');
+        const scr = document.getElementById(screen);
+        if(scr) scr.classList.add('open');
+      }
+    });
+  }
+});
+
+// AUDIO PLAYER LOGIC
+const songList = [
+  { title: "BUGG", file: "BUGG.mp3" },
+  { title: "C-7", file: "C-7.mp3" },
+  { title: "DBFSG", file: "DBFSG.mp3" }
+];
+
+const audioPlayer = document.getElementById('audioPlayer');
+const nowPlayingTitle = document.getElementById('nowPlayingTitle');
+const nowPlayingArtist = document.getElementById('nowPlayingArtist');
+const playPauseBtn = document.getElementById('playPauseBtn');
+const playPauseIcon = document.getElementById('playPauseIcon');
+const prevSongBtn = document.getElementById('prevSongBtn');
+const nextSongBtn = document.getElementById('nextSongBtn');
+
+let currentSongIndex = 0;
+let isPlaying = false;
+
+function loadSong(index) {
+  currentSongIndex = index;
+  audioPlayer.src = "songs/" + songList[index].file;
+  nowPlayingTitle.textContent = songList[index].title;
+  nowPlayingArtist.textContent = "Your Song";
+  playPauseIcon.className = "ri-play-line";
+  isPlaying = false;
+}
+
+function playSong() {
+  audioPlayer.play();
+  isPlaying = true;
+  playPauseIcon.className = "ri-pause-line";
+}
+
+function pauseSong() {
+  audioPlayer.pause();
+  isPlaying = false;
+  playPauseIcon.className = "ri-play-line";
+}
+
+function playPauseToggle() {
+  if (isPlaying) pauseSong();
+  else playSong();
+}
+
+function prevSong() {
+  let idx = (currentSongIndex - 1 + songList.length) % songList.length;
+  loadSong(idx);
+  playSong();
+}
+
+function nextSong() {
+  let idx = (currentSongIndex + 1) % songList.length;
+  loadSong(idx);
+  playSong();
+}
+
+function selectSong(idx) {
+  loadSong(idx);
+  playSong();
+}
+
+audioPlayer.addEventListener('ended', nextSong);
+playPauseBtn.addEventListener('click', playPauseToggle);
+prevSongBtn.addEventListener('click', prevSong);
+nextSongBtn.addEventListener('click', nextSong);
+
+window.addEventListener('DOMContentLoaded', () => {
+  loadSong(0);
+});
+
+// DRUM PAD LOGIC
+const sampleMap = {
+  'Q': 'Clap - Crackle 1.wav',
+  'W': 'Kick - Hard.wav',
+  'E': 'Snare - Tight.wav',
+  'R': 'Clap - Flange.wav',
+  'T': 'Hats - Sizzle.wav',
+  'Y': 'Hats - Vinyl 1.wav',
+  'U': 'Kick - It.wav',
+  'I': 'Perc - Analog 1.wav',
+  'A': 'Clap - Crackle 2.wav',
+  'S': 'Kick - Glitcher.wav',
+  'D': 'Snare - Lofi.wav',
+  'F': 'Clap - Giannis.wav',
+  'G': 'Hats - Springwater.wav',
+  'H': 'Kick - Boiler.wav',
+  'J': 'Kick - Showstopper.wav',
+  'K': 'Perc - Analog 2.wav'
+};
+const padKeys = Object.keys(sampleMap);
+document.querySelectorAll('.caustic-pad').forEach(pad => {
+  pad.addEventListener('click', () => {
+    const key = pad.querySelector('.key').textContent.trim();
+    const filename = sampleMap[key];
+    if (filename) {
+      const audio = new Audio('sound_samples/drum_samples/' + filename);
+      audio.play();
+    }
+  });
+});
+
+// Sequencer
+const steps = 16;
+const sequencer = document.getElementById('sequencer');
+let seqPattern = Array(steps).fill(false);
+function renderSequencer() {
+  sequencer.innerHTML = '';
+  for (let i = 0; i < steps; i++) {
+    const cell = document.createElement('div');
+    cell.className = 'sequencer-cell' + (seqPattern[i] ? ' active' : '');
+    cell.addEventListener('click', () => {
+      seqPattern[i] = !seqPattern[i];
+      renderSequencer();
+    });
+    sequencer.appendChild(cell);
+  }
+}
+renderSequencer();
+
+let seqInterval = null;
+document.getElementById('playSeq').onclick = () => {
+  let step = 0;
+  seqInterval = setInterval(() => {
+    if (seqPattern[step]) {
+      const audio = new Audio('sound_samples/drum_samples/' + sampleMap[padKeys[0]]);
+      audio.play();
+    }
+    step = (step + 1) % steps;
+  }, 200);
+};
+document.getElementById('stopSeq').onclick = () => clearInterval(seqInterval);
+document.getElementById('clearSeq').onclick = () => {
+  seqPattern = Array(steps).fill(false);
+  renderSequencer();
+  clearInterval(seqInterval);
+};
+
+// Sequencer WAV Export (basic drum click)
+document.getElementById('downloadSeqWav').onclick = () => {
+  const sampleRate = 44100;
+  const duration = 0.2; // seconds per step
+  const buffer = new Float32Array(sampleRate * duration * steps);
+  for (let i = 0; i < steps; i++) {
+    if (seqPattern[i]) {
+      // Add a simple click (sine wave burst) for each active step
+      for (let j = 0; j < sampleRate * duration * 0.1; j++) {
+        buffer[i * sampleRate * duration + j] += Math.sin(2 * Math.PI * 440 * j / sampleRate) * Math.exp(-j / (sampleRate * 0.02));
+      }
+    }
+  }
+  // Convert to WAV
+  function encodeWAV(samples, sampleRate) {
+    function writeString(view, offset, string) {
+      for (let i = 0; i < string.length; i++) view.setUint8(offset + i, string.charCodeAt(i));
+    }
+    const buffer = new ArrayBuffer(44 + samples.length * 2);
+    const view = new DataView(buffer);
+    writeString(view, 0, 'RIFF');
+    view.setUint32(4, 36 + samples.length * 2, true);
+    writeString(view, 8, 'WAVE');
+    writeString(view, 12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, 1, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * 2, true);
+    view.setUint16(32, 2, true);
+    view.setUint16(34, 16, true);
+    writeString(view, 36, 'data');
+    view.setUint32(40, samples.length * 2, true);
+    let offset = 44;
+    for (let i = 0; i < samples.length; i++, offset += 2) {
+      let s = Math.max(-1, Math.min(1, samples[i]));
+      view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+    }
+    return new Blob([buffer], { type: 'audio/wav' });
+  }
+  const wavBlob = encodeWAV(buffer, sampleRate);
+  const url = URL.createObjectURL(wavBlob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'sequencer.wav';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+};
+
+// Looper (demo)
+let loopInterval = null;
+document.getElementById('startLoop').onclick = () => {
+  loopInterval = setInterval(() => {
+    document.querySelectorAll('.caustic-pad')[0].click();
+    document.querySelectorAll('.caustic-pad')[1].click();
+  }, 500);
+};
+document.getElementById('stopLoop').onclick = () => clearInterval(loopInterval);
+
+// Recorder (demo - not real audio, just fake)
+let recBlob = null;
+document.getElementById('startRec').onclick = () => {
+  recBlob = null;
+  document.getElementById('downloadRec').classList.add('hidden');
+  alert('Recording started (demo)');
+};
+document.getElementById('stopRec').onclick = () => {
+  recBlob = new Blob(['FAKEAUDIO'], {type:'audio/wav'});
+  const url = URL.createObjectURL(recBlob);
+  const link = document.getElementById('downloadRec');
+  link.href = url;
+  link.classList.remove('hidden');
+  alert('Recording stopped (demo)');
+};
+
+// Custom Track Audio Player (demo)
+const customTrackPlayer = document.getElementById('customTrackPlayer');
+customTrackPlayer.src = 'sound_samples/drum_samples/' + sampleMap[padKeys[0]];
+</script>
+</body>
+</html>
